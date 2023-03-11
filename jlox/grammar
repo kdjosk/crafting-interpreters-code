@@ -1,0 +1,21 @@
+expression -> errExpressionNoLeftOperand | ternary ( "," ternary )* ;
+errExpressionNoLeftOperand -> ( "," ternary )* ;
+
+ternary -> equality ( "?" equality ":" ternary )? ;
+
+equality -> errEqualityNoLeftOperand | comparison ( ( "!=" | "==" ) comparison )*;
+errEqualityNoLeftOperand -> ( ( "!=" | "==" ) comparison )* ;
+
+comparison -> errComparisonNoLeftOperand | term ( ( ">" | ">=" | "<" | "<=") term )* ; 
+errComparisonNoLeftOperand -> ( ( ">" | ">=" | "<" | "<=") term )* ; 
+
+term -> errTermNoLeftOperand | factor ( ( "-" | "+" ) factor )*;
+errTermNoLeftOperand -> ( ( "-" | "+" ) factor )* ;
+
+factor -> errFactorNoLeftOperand | unary ( ( "/" | "*" ) unary )* ;
+errFactorNoLeftOperand -> ( ( "/" | "*" ) unary )* ;
+
+unary -> ( "!" | "-" ) unary | primary ;
+primary -> NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" ;
+
+ternary -> expression "?" expression ":" expression ;

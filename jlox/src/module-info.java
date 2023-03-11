@@ -1,0 +1,9 @@
+/**
+ * 
+ */
+/**
+ * @author krzysztof
+ *
+ */
+module jlox {
+}
