@@ -10,9 +10,13 @@ import static jlox.TokenType.*;
 public class Scanner {
     private final String source;
     private final List<Token> tokens = new ArrayList<>();
+    private List<String> linesText = new ArrayList<>();
     private int start = 0;
     private int current = 0;
     private int line = 1;
+    private int lineStart = 0;
+    private int column = -1;
+    
     
     private static final Map<String, TokenType> keywords;
     
@@ -40,13 +44,17 @@ public class Scanner {
         this.source = source;
     }
     
+    List<String> getLines() {
+      return linesText;
+    }
+    
     List<Token> scanTokens() {
         while (!isAtEnd()) {
             start = current;
             scanToken();
         }
         
-        tokens.add(new Token(EOF, "", null, line));
+        tokens.add(new Token(EOF, "", null, line, column));
         return tokens;
     }
     
@@ -87,6 +95,9 @@ public class Scanner {
                 break;
             case '\n':
                 line++;
+                column = -1;
+                linesText.add(source.substring(lineStart, current - 1));
+                lineStart = current;
                 break;
                 
             case '"': string(); break;
@@ -97,7 +108,7 @@ public class Scanner {
                 } else if (isAlpha(c)) {
                     identifier();
                 } else {
-                    Lox.error(line, "Unexpected character: " + c);
+                    Lox.error(line, column, "Unexpected character: " + c);
                 }
                 break;
         }
@@ -131,7 +142,7 @@ public class Scanner {
         }
         
         if (isAtEnd()) {
-            Lox.error(line, "Unterminated string.");
+            Lox.error(line, column, "Unterminated string.");
             return;
         }
         
@@ -169,7 +180,7 @@ public class Scanner {
                 }
             }
             
-            Lox.error(line, "Unterminated block comment");
+            Lox.error(line, column, "Unterminated block comment");
         } else {
             addToken(SLASH);
         }
@@ -180,6 +191,7 @@ public class Scanner {
         if (source.charAt(current) != expected) return false;
         
         current++;
+        column++;
         return true;
     }
     
@@ -212,6 +224,7 @@ public class Scanner {
     }
     
     private char advance() {
+        column++;
         return source.charAt(current++);
     }
     
@@ -221,6 +234,6 @@ public class Scanner {
     
     private void addToken(TokenType type, Object literal) {
         String text = source.substring(start, current);
-        tokens.add(new Token(type, text, literal, line));
+        tokens.add(new Token(type, text, literal, line, column));
     }
 }

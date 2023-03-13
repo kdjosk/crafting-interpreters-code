@@ -1,5 +1,13 @@
-expression -> errExpressionNoLeftOperand | ternary ( "," ternary )* ;
-errExpressionNoLeftOperand -> ( "," ternary )* ;
+program -> statement* EOF;
+
+statement -> exprStmt | printStmt ;
+
+exprStmt -> expression ";" ;
+printStmt -> "print" expression ";" ;
+
+expression -> errExprNoLeftOperand | ternary ( "," ternary )* ;
+errExprNoLeftOperand -> ( "," ternary )* ;
+errExprMissingOperator -> ternary ( "," ternary )* ternary ;
 
 ternary -> equality ( "?" equality ":" ternary )? ;
 
@@ -10,7 +18,7 @@ comparison -> errComparisonNoLeftOperand | term ( ( ">" | ">=" | "<" | "<=") ter
 errComparisonNoLeftOperand -> ( ( ">" | ">=" | "<" | "<=") term )* ; 
 
 term -> errTermNoLeftOperand | factor ( ( "-" | "+" ) factor )*;
-errTermNoLeftOperand -> ( ( "-" | "+" ) factor )* ;
+errTermNoLeftOperand -> ( "+" factor )* ;
 
 factor -> errFactorNoLeftOperand | unary ( ( "/" | "*" ) unary )* ;
 errFactorNoLeftOperand -> ( ( "/" | "*" ) unary )* ;

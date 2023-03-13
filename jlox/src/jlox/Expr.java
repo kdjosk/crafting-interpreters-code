@@ -9,6 +9,7 @@ abstract class Expr {
     R visitGroupingExpr(Grouping expr);
     R visitLiteralExpr(Literal expr);
     R visitUnaryExpr(Unary expr);
+    R visitErroneousExpr(Erroneous expr);
   }
   static class Binary extends Expr {
     Binary(Expr left, Token operator, Expr right) {
@@ -79,6 +80,18 @@ abstract class Expr {
 
     final Token operator;
     final Expr right;
+  }
+  static class Erroneous extends Expr {
+    Erroneous(ExprErrType error_type) {
+      this.error_type = error_type;
+    }
+
+    @Override
+    <R> R accept(Visitor<R> visitor) {
+      return visitor.visitErroneousExpr(this);
+    }
+
+    final ExprErrType error_type;
   }
 
   abstract <R> R accept(Visitor<R> visitor);

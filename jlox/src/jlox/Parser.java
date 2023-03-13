@@ -22,10 +22,15 @@ class Parser {
   }
   
   // expression -> errExpressionNoLeftOperand | ternary ( "," ternary )* ;
+  // errExpressionNoLeftOperand -> ( "," ternary )* ;
+  // errExpressionNoOperator -> ternary ( "," ternary )* ternary ;
   private Expr expression() {
     if (check(COMMA)) {
       error(peek(), "Expected expression before ','");
-      errExpressionNoLeftOperand();
+      while (match(COMMA)) {
+        ternary();
+      }
+      return new Expr.Erroneous(ExprErrType.NO_LEFT_OPERAND_FOR_BINARY_OPERATOR);
     }
     
     Expr expr = ternary();
@@ -36,14 +41,12 @@ class Parser {
       expr = new Expr.Binary(expr, operator, right);
     }
     
-    return expr;
-  }
-  
-  //errExpressionNoLeftOperand -> ( "," ternary )* ;
-  private void errExpressionNoLeftOperand() {
-    while (match(COMMA)) {
-      ternary();
+    if (!isAtEnd()) {
+      throw error(peek(), "Unexpected token");
     }
+    
+    
+    return expr;
   }
   
   //  ternary -> equality ( "?" equality ":" ternary )? ;
@@ -61,11 +64,15 @@ class Parser {
     
   }
   
-  //  equality -> errEqualityNoLeftOperand | comparison ( ( "!=" | "==" ) comparison )*;
+  // equality -> errEqualityNoLeftOperand | comparison ( ( "!=" | "==" ) comparison )*;
+  // errEqualityNoLeftOperand -> ( ( "!=" | "==" ) comparison )* ;
   private Expr equality() {
     if (check(BANG_EQUAL, EQUAL_EQUAL)) {
       error(peek(), "Expected expression before '" + peek().lexeme +"'");
-      errEqualityNoLeftOperand();
+      while(match(BANG_EQUAL, EQUAL_EQUAL)) {
+        comparison();
+      }
+      return new Expr.Erroneous(ExprErrType.NO_LEFT_OPERAND_FOR_BINARY_OPERATOR);
     }
     
     Expr expr = comparison();
@@ -79,15 +86,17 @@ class Parser {
     return expr;
   }
   
-  // errEqualityNoLeftOperand -> ( ( "!=" | "==" ) comparison )* ;
-  private void errEqualityNoLeftOperand() {
-    while(match(BANG_EQUAL, EQUAL_EQUAL)) {
-      comparison();
-    }
-  }
-  
-  // comparison -> term ( ( ">" | ">=" | "<" | "<=") term )* ;
+  //  comparison -> errComparisonNoLeftOperand | term ( ( ">" | ">=" | "<" | "<=") term )* ; 
+  //  errComparisonNoLeftOperand -> ( ( ">" | ">=" | "<" | "<=") term )* ; 
   private Expr comparison() {
+    if (check(GREATER, GREATER_EQUAL, LESS, LESS_EQUAL)) {
+      error(peek(), "Expected expression before '" + peek().lexeme + "'");
+      while (match(GREATER, GREATER_EQUAL, LESS, LESS_EQUAL)) {
+        term();
+      }
+      return new Expr.Erroneous(ExprErrType.NO_LEFT_OPERAND_FOR_BINARY_OPERATOR);
+    }
+    
     Expr expr = term();
     
     while (match(GREATER, GREATER_EQUAL, LESS, LESS_EQUAL)) {
@@ -99,8 +108,17 @@ class Parser {
     return expr;
   }
   
-  // term -> factor ( ( "-" | "+" ) factor )* ;
+  //  term -> errTermNoLeftOperand | factor ( ( "-" | "+" ) factor )*;
+  //  errTermNoLeftOperand -> ( "+" factor )* ;
   private Expr term() {
+    if (check(PLUS)) {
+      error(peek(), "Expected expression before '" + peek().lexeme + "'");
+      while (match(PLUS)) {
+        term();
+      }
+      return new Expr.Erroneous(ExprErrType.NO_LEFT_OPERAND_FOR_BINARY_OPERATOR);
+    }
+    
     Expr expr = factor();
     
     while (match(PLUS, MINUS)) {
@@ -112,8 +130,17 @@ class Parser {
     return expr;
   }
   
-  // factor -> unary ( ( "/" | "*" ) unary )* ;
+  //  factor -> errFactorNoLeftOperand | unary ( ( "/" | "*" ) unary )* ;
+  //  errFactorNoLeftOperand -> ( ( "/" | "*" ) unary )* ;
   private Expr factor() {
+    if (check(SLASH, STAR)) {
+      error(peek(), "Expected expression before '" + peek().lexeme + "'");
+      while (match(SLASH, STAR)) {
+        unary();
+      }
+      return new Expr.Erroneous(ExprErrType.NO_LEFT_OPERAND_FOR_BINARY_OPERATOR);
+    }
+    
     Expr expr = unary();
     
     while (match(SLASH, STAR)) {
@@ -152,7 +179,7 @@ class Parser {
       return new Expr.Grouping(expr);
     }
     
-    throw error(peek(), "Expect expression.");
+    throw error(peek(), "Expected expression.");
   }
   
   private boolean match(TokenType... types) {
