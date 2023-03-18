@@ -2,7 +2,10 @@
 #include <stdbool.h>
 
 int main(void) {
-    int a = 2,  / 2, 3, 4, "fdsf", 3.4;
-    printf("%d\n", a);
+    int a = 1;
+    {
+        int a = a + 2;
+        printf("%d\n", a);
+    }
     return 0;
 }

@@ -1,25 +1,57 @@
 package jlox;
 
+import jlox.Expr.Assign;
 import jlox.Expr.Binary;
 import jlox.Expr.Erroneous;
 import jlox.Expr.Grouping;
 import jlox.Expr.Literal;
+import jlox.Expr.Logical;
 import jlox.Expr.Ternary;
 import jlox.Expr.Unary;
+import jlox.Stmt.Block;
+import jlox.Stmt.Expression;
+import jlox.Stmt.If;
+import jlox.Stmt.Print;
+import jlox.Stmt.Var;
+import jlox.Stmt.While;
+
 import static jlox.TokenType.*;
 
-class Interpreter implements Expr.Visitor<Object> {
+import java.util.List;
+
+class Interpreter implements Expr.Visitor<Object>,
+                             Stmt.Visitor<Void> {
   
-  void interpret(Expr expression) {
+  private Environment environment = new Environment();
+  
+  void interpret(List<Stmt> statements) {
     try {
-      Object value = evaluate(expression);
-      System.out.println(stringify(value));
+      for (Stmt statement : statements) {
+        execute(statement);
+      }
     } catch (RuntimeError error) {
       Lox.runtimeError(error);
     }
   }
   
-  private String stringify(Object object) {
+  void interpret(Stmt statement) {
+    try {
+      execute(statement);
+    } catch (RuntimeError error) {
+      Lox.runtimeError(error);
+    }
+  }
+  
+  Object interpret(Expr expression) {
+    try {
+      return evaluate(expression);
+    } catch (RuntimeError error) {
+      Lox.runtimeError(error);
+      return null;
+    }
+  }
+  
+  public String stringify(Object object) {
     if (object == null) return "nil";
     
     if (object instanceof Double) {
@@ -35,7 +67,76 @@ class Interpreter implements Expr.Visitor<Object> {
     
     return object.toString();
   }
+  
+  @Override
+  public Void visitVarStmt(Var stmt) {
+    Object value = null;
+    if (stmt.initializer != null) {
+      value = evaluate(stmt.initializer);
+    }
+    
+    environment.define(stmt.name.lexeme, value);
+    return null;
+  }
+  
+  @Override
+  public Object visitAssignExpr(Assign expr) {
+    Object value = evaluate(expr.value);
+    environment.assign(expr.name, value);
+    return value;
+  }
 
+  @Override
+  public Void visitExpressionStmt(Expression stmt) {
+    evaluate(stmt.expression);
+    return null;
+  }
+  
+  @Override
+  public Void visitIfStmt(If stmt) {
+    if (isTruthy(evaluate(stmt.condition))) {
+      execute(stmt.thenBranch);
+    } else if (stmt.elseBranch != null) {
+      execute(stmt.elseBranch);
+    }
+    return null;
+  }
+
+  @Override
+  public Void visitPrintStmt(Print stmt) {
+    Object value = evaluate(stmt.expression);
+    System.out.println(stringify(value));
+    return null;
+  }
+  
+  @Override
+  public Void visitWhileStmt(While stmt) {
+    while (isTruthy(evaluate(stmt.condition))) {
+      execute(stmt.body);
+    }
+    return null;
+  }
+  
+  @Override
+  public Void visitBlockStmt(Block stmt) {
+    executeBlock(stmt.statements, new Environment(environment));
+    return null;
+  }
+  
+  @Override
+  public Object visitLogicalExpr(Logical expr) {
+    Object left = evaluate(expr.left);
+    
+    if (expr.operator.type == TokenType.OR) {
+      if (isTruthy(left)) return left;
+    } else {
+      if (!isTruthy(left)) return left;
+    }
+    
+    return evaluate(expr.right);
+  }
+
+  
   @Override
   public Object visitBinaryExpr(Binary expr) {
     Object left = evaluate(expr.left);
@@ -125,6 +226,11 @@ class Interpreter implements Expr.Visitor<Object> {
     }
   }
   
+  @Override
+  public Object visitVariableExpr(Expr.Variable expr) {
+    return environment.get(expr.name);
+  }
+  
   private void checkNumberOperand(Token operator, Object operand) {
     if (operand instanceof Double) return;
     throw new RuntimeError(operator, "Operand must be a number.");
@@ -159,5 +265,21 @@ class Interpreter implements Expr.Visitor<Object> {
     return expr.accept(this);
   }
   
+  private void execute(Stmt stmt) {
+    stmt.accept(this);
+  }
+  
+  void executeBlock(List<Stmt> statements, Environment environment) {
+    Environment previous = this.environment;
+    try {
+      this.environment = environment;
+      
+      for (Stmt statement : statements) {
+        execute(statement);
+      }
+    } finally {
+      this.environment = previous;
+    }
+  }
   
 }

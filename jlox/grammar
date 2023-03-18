@@ -1,29 +1,58 @@
-program -> statement* EOF;
+// REPL start rule
+program -> (expression | declaration) EOF ;
 
-statement -> exprStmt | printStmt ;
+// File start rule 
+program -> (declaration*) EOF ;
+
+declaration -> varDecl | statement ;
+
+statement -> exprStmt 
+            | ifStmt 
+            | printStmt
+            | whileStmt 
+            | forStmt
+            | block ;
+            
+varDecl -> "var" IDENTIFIER ( "=" expression )? ";" ;
 
 exprStmt -> expression ";" ;
+ifStmt -> "if" "(" expression ")" statement ( "else" statement )? ;
 printStmt -> "print" expression ";" ;
+whileStmt -> "while" "(" expression ")" statement ;
+forStmt -> "for" "(" ( varDecl | exprStmt | ";") expression? ";" expression? ")" statement ;
 
-expression -> errExprNoLeftOperand | ternary ( "," ternary )* ;
-errExprNoLeftOperand -> ( "," ternary )* ;
-errExprMissingOperator -> ternary ( "," ternary )* ternary ;
+block -> "{" declaration* "}" ;
 
-ternary -> equality ( "?" equality ":" ternary )? ;
+expression -> assignment ( "," assignment )* | errExprNoLeftOperand ;
+errExprNoLeftOperand -> ( "," assignment )* ;
 
-equality -> errEqualityNoLeftOperand | comparison ( ( "!=" | "==" ) comparison )*;
+assignment -> IDENTIFIER "=" assignment | ternary | errAssignNoLeftOperand ;
+errAssignNoLeftOperand -> "=" assignment ;
+
+ternary -> logic_or ( "?" logic_or ":" ternary )? ;
+
+logic_or -> logic_and ( "or" logic_and )* | errLogic_orNoLeftOperand ;
+errLogic_orNoLeftOperand -> ("or" logic_and)* ;
+
+logic_and -> equality ( "and" equality )* | errLogic_andNoLetOperand;
+errLogic_andNoLeftOperand -> ( "and" equality )* ;
+
+equality -> comparison ( ( "!=" | "==" ) comparison )* | errEqualityNoLeftOperand ;
 errEqualityNoLeftOperand -> ( ( "!=" | "==" ) comparison )* ;
 
-comparison -> errComparisonNoLeftOperand | term ( ( ">" | ">=" | "<" | "<=") term )* ; 
+comparison -> term ( ( ">" | ">=" | "<" | "<=") term )* | errComparisonNoLeftOperand ; 
 errComparisonNoLeftOperand -> ( ( ">" | ">=" | "<" | "<=") term )* ; 
 
-term -> errTermNoLeftOperand | factor ( ( "-" | "+" ) factor )*;
+term -> factor ( ( "-" | "+" ) factor )* | errTermNoLeftOperand;
 errTermNoLeftOperand -> ( "+" factor )* ;
 
-factor -> errFactorNoLeftOperand | unary ( ( "/" | "*" ) unary )* ;
+factor -> unary ( ( "/" | "*" ) unary )* | errFactorNoLeftOperand ;
 errFactorNoLeftOperand -> ( ( "/" | "*" ) unary )* ;
 
 unary -> ( "!" | "-" ) unary | primary ;
-primary -> NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" ;
+primary -> NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")"
+            | variableExpr ;
+
+variableExpr - > IDENTIFIER
 
 ternary -> expression "?" expression ":" expression ;

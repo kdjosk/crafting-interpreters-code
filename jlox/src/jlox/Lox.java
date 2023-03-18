@@ -30,8 +30,7 @@ public class Lox {
         byte[] bytes = Files.readAllBytes(Paths.get(path));
         String text = new String(bytes, Charset.defaultCharset());
         
-        
-        run(text);
+        runFromFile(text);
         if (hadError) System.exit(65);
         if (hadRuntimeError) System.exit(70);
     }
@@ -41,30 +40,46 @@ public class Lox {
         BufferedReader reader = new BufferedReader(input);
 
         for (;;) {
-            System.out.print("> ");
+            System.out.print(">>> ");
             String line = reader.readLine();
             if (line == null)
                 break;
-            run(line);
+            runFromInteractive(line);
             hadError = false;
         }
     }
+    
+    private static Parser makeParser(String source) {
+      Scanner scanner = new Scanner(source);
+      List<Token> tokens = scanner.scanTokens();
+      linesText = scanner.getLines();
+      return new Parser(tokens);
+    }
+    
+    private static void runFromInteractive(String source) {
+      Parser parser = makeParser(source);
+    
+      Object stmt_or_expr = parser.parseFromInteractive();
+      
+      // Stop if there was a syntax error.
+      if (hadError) return;
+      
+      if (stmt_or_expr instanceof Stmt) {
+        interpreter.interpret((Stmt)stmt_or_expr);
+      } else if (stmt_or_expr instanceof Expr) {
+        Object value = interpreter.interpret((Expr)stmt_or_expr);
+        System.out.println(interpreter.stringify(value));
+      }
+    }
 
-    private static void run(String source) {
-        Scanner scanner = new Scanner(source);
-        List<Token> tokens = scanner.scanTokens();
-        linesText = scanner.getLines();
-        Parser parser = new Parser(tokens);
-        Expr expression = parser.parse();
+    private static void runFromFile(String source) {
+        Parser parser = makeParser(source);
+        List<Stmt> statements = parser.parseFromFile();
         
         // Stop if there was a syntax error.
         if (hadError) return;
         
-        for (Token t : tokens) {
-          System.out.println(t.toString());
-        }
-        System.out.println(new AstPrinter().print(expression));
-        interpreter.interpret(expression);
+        interpreter.interpret(statements);
     }
     
     static void error(int line, int column, String message) {
@@ -85,13 +100,16 @@ public class Lox {
     }
 
     private static void report(int line, int column, String message) {
-        if (column >= 0) {
-          System.err.println(linesText.get(line - 1));
-          System.err.println(" ".repeat(column) + "^");  
-        }
-		System.err.println(
+      if (column < 0) column = 0;
+      
+      if(line >= 2) {
+        System.err.println((line - 1) + " | " + linesText.get(line - 2));
+      }
+      System.err.println(line + " | " + linesText.get(line - 1));
+      System.err.println(" ".repeat(column + 4) + "^");  
+      System.err.println(
 			"[line: " + line + "] Error: " + message);
-		hadError = true;
-	}
+      hadError = true;
+    }
 
 }
