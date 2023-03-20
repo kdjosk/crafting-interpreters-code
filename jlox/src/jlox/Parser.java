@@ -18,7 +18,7 @@ class Parser {
   // program -> (expression | declaration) EOF ;
   Object parseFromInteractive() {
     if (check(VAR, PRINT, LEFT_BRACE)) {
-      Stmt stmt = declaration();
+      Stmt stmt = declaration(false, false);
       if (!isAtEnd()) {
         error(peek(), "Single statement expected in interactive mode");
       }
@@ -46,21 +46,47 @@ class Parser {
   List<Stmt> parseFromFile() {
     List<Stmt> statements = new ArrayList<>();
     while (!isAtEnd()) {
-      statements.add(declaration());
+      statements.add(declaration(false, false));
     }
     return statements;
   }
   
-  // declaration -> varDecl | statement ;
+  // declaration -> varDecl | funDecl | statement ;
   // varDecl -> "var" IDENTIFIER ( "=" expression )? ";" ;
-  private Stmt declaration() {
+  private Stmt declaration(boolean insideLoop, boolean insideFun) {
     try {
+      if (match(FUN)) return function("function");
       if (match(VAR)) return varDeclaration();
-      return statement();
+      return statement(insideLoop, insideFun);
     } catch (ParseError error) { 
       synchronize();
       return null;
     }
+  }
+  
+  //  funDecl -> "fun" function ;
+  //  function -> IDENTIFIER "(" parameters? ")" block ; 
+  //  parameters -> IDENTIFIER ( "," IDENTIFIER )* ;
+  private Stmt.Function function(String kind) {
+    Token name = consume(IDENTIFIER, "Expected " + kind + " name.");
+    consume(LEFT_PAREN, "Expected '(' after " + kind + " name.");
+    List<Token> parameters = new ArrayList<>();
+    if (!check(RIGHT_PAREN)) {
+      do {
+        if (parameters.size() >= 255) {
+          error(peek(), "Can't have more than 255 parameters");
+        }
+        
+        parameters.add(
+            consume(IDENTIFIER, "Expect parameter name."));
+      } while (match(COMMA));
+    }
+    
+    consume(RIGHT_PAREN, "Expect ')' after parameters");
+    
+    consume(LEFT_BRACE, "Expected '{' before " + kind + " body.");
+    List<Stmt> body = block(false, true);
+    return new Stmt.Function(name,  parameters, body);
   }
   
   private Stmt varDeclaration() {
@@ -75,20 +101,33 @@ class Parser {
     return new Stmt.Var(name, initializer);
   }
   
-  //  statement -> exprStmt | ifStmt | printStmt | whileStmt | block ;
+  //  statement -> exprStmt | ifStmt | printStmt | whileStmt | jumpStmt | block ;
   //  exprStmt -> expression ";" ;
   //  ifStmt -> "if" "(" expression ")" statement ( "else" statement )? ;
   //  printStmt -> "print" expression ";" ;
   //  whileStmt -> "while" "(" expression ")" statement ;
   //  forStmt -> "for" "(" ( varDecl | exprStmt | ";") expression? ";" expression? ")" statement ;
+  //  jumpStmt -> breakStmt | continueStmt ;
+  //  breakStmt -> "break" ";" ;
+  //  continueStmt -> "continue" ";" ;
   //  block -> "{" declaration* "}" ;
-
-  private Stmt statement() {
-    if (match(IF)) return ifStatement();
+  private Stmt statement(boolean insideLoop, boolean insideFun) {
+    if (match(IF)) return ifStatement(insideLoop, insideFun);
     if (match(PRINT)) return printStatement();
-    if (match(WHILE)) return whileStatement();
-    if (match(FOR)) return forStatement();
-    if (match(LEFT_BRACE)) return new Stmt.Block(block());
+    if (match(WHILE)) return whileStatement(insideFun);
+    if (match(FOR)) return forStatement(insideFun);
+    if (match(LEFT_BRACE)) return new Stmt.Block(block(insideLoop, insideFun));
+    
+    if (match(CONTINUE, BREAK)) {
+      if (insideLoop) return jumpStatement();
+      throw error(previous(), "Jump statements are not allowed outside of loop body.");
+    }
+    
+    if (match(RETURN)) {
+      if (insideFun) return jumpStatement();
+      throw error(previous(), "Return statements are not allowed outside of function body.");
+    }
+    
     return expressionStatement();
   }
   
@@ -104,7 +143,20 @@ class Parser {
     return new Stmt.Expression(expr);
   }
   
-  private Stmt forStatement() {
+  private Stmt jumpStatement() {
+    Token keyword = previous();
+    Expr value = null;
+    if (keyword.type == RETURN) {
+      if (!check(SEMICOLON)) {
+        value = expression();
+      }
+    }
+    
+    consume(SEMICOLON, "Expected ';' after " + keyword.lexeme + " statement");
+    return new Stmt.Jump(keyword, value);
+  }
+  
+  private Stmt forStatement(boolean insideFun) {
     consume(LEFT_PAREN, "Expected '(' after 'for'.");
     
     Stmt initializer;
@@ -128,50 +180,45 @@ class Parser {
     }
     consume(RIGHT_PAREN, "Expected ')' after increment expression");
     
-    Stmt body = statement();
-    
-    if (increment != null) {
-      body = new Stmt.Block(Arrays.asList(body, new Stmt.Expression(increment)));
-    }
-    
-    if (condition == null) condition = new Expr.Literal(true);
-    body = new Stmt.While(condition, body);
+    Stmt body = statement(true, insideFun);
+    Stmt loop = new Stmt.For(condition, body, increment);
     
     if (initializer != null) {
-      body = new Stmt.Block(Arrays.asList(initializer, body));
+      loop = new Stmt.Block(Arrays.asList(initializer, loop));
     }
     
-    return body;
+    return loop;
+    
   }
   
-  private Stmt whileStatement() {
+  private Stmt whileStatement(boolean insideFun) {
     consume(LEFT_PAREN, "Expected '(' after 'while'.");
     Expr condition = expression();
     consume(RIGHT_PAREN, "Expected ')' after condition.");
-    Stmt body = statement();
+    Stmt body = statement(true, insideFun);
     
     return new Stmt.While(condition, body);
   }
   
-  private Stmt ifStatement() {
+  private Stmt ifStatement(boolean insideLoop, boolean insideFun) {
     consume(LEFT_PAREN, "Expected '(' after 'if'.");
     Expr condition = expression();
     consume(RIGHT_PAREN, "Expect ')' after if condition.");
     
-    Stmt thenBranch = statement();
+    Stmt thenBranch = statement(insideLoop, insideFun);
     Stmt elseBranch = null;
     if (match(ELSE)) {
-      elseBranch = statement();
+      elseBranch = statement(insideLoop, insideFun);
     }
     
     return new Stmt.If(condition, thenBranch, elseBranch);
   }
   
-  private List<Stmt> block() {
+  private List<Stmt> block(boolean insideLoop, boolean insideFun) {
     List<Stmt> statements = new ArrayList<>();
     
     while (!check(RIGHT_BRACE) && !isAtEnd()) {
-      statements.add(declaration());
+      statements.add(declaration(insideLoop, insideFun));
     }
     
     consume(RIGHT_BRACE, "Expected '}' after block.");
@@ -269,7 +316,7 @@ class Parser {
   //  errLogic_andNoLeftOperand -> ( "and" equality )* ;
   private Expr logic_and() {
     if (check(AND)) {
-      error(peek(), "Expected expression before '" + peek().lexeme +"'");
+      error(peek(), "Expected expression before '" + peek().lexeme + "'");
       while (match(AND)) {
         equality();
       }
@@ -375,7 +422,7 @@ class Parser {
     return expr;
   }
   
-  // unary -> ( "!" | "-" ) unary | primary ;
+  // unary -> ( "!" | "-" ) unary | call ;
   private Expr unary() {
     if (match(BANG, MINUS)) {
       Token operator = previous();
@@ -383,7 +430,39 @@ class Parser {
       return new Expr.Unary(operator, right);
     }
     
-    return primary();
+    return call();
+  }
+  
+  // call -> primary ( "(" arguments? ")" )* ;
+  // arguments -> assignment ( "," assignment)* ;
+  private Expr call() {
+    Expr expr = primary();
+    
+    while (true) {
+      if (match(LEFT_PAREN)) {
+        expr = finishCall(expr);
+      } else {
+        break;
+      }
+    }
+    
+    return expr;
+  }
+  
+  private Expr finishCall(Expr callee) {
+    List<Expr> arguments = new ArrayList<>();
+    if (!check(RIGHT_PAREN)) {
+      do {
+        if (arguments.size() >= 255) {
+          error(peek(), "Can't have more than 255 arguments.");
+        }
+        arguments.add(assignment());
+      } while (match(COMMA));
+    }
+    
+    Token paren = consume(RIGHT_PAREN, "Expected ')' after arguments.");
+    
+    return new Expr.Call(callee, paren, arguments);
   }
   
   // primary -> NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" | IDENTIFIER;
@@ -473,6 +552,7 @@ class Parser {
         case WHILE:
         case PRINT:
         case RETURN:
+        case BREAK:
           return;
       }
       

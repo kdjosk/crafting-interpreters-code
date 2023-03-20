@@ -4,22 +4,36 @@ program -> (expression | declaration) EOF ;
 // File start rule 
 program -> (declaration*) EOF ;
 
-declaration -> varDecl | statement ;
+declaration -> varDecl 
+              | funDecl 
+              | statement ;
 
 statement -> exprStmt 
             | ifStmt 
             | printStmt
-            | whileStmt 
+            | whileStmt
             | forStmt
+            | jumpStmt
             | block ;
             
 varDecl -> "var" IDENTIFIER ( "=" expression )? ";" ;
+
+funDecl -> "fun" function ;
+function -> IDENTIFIER "(" parameters? ")" block ; 
+parameters -> IDENTIFIER ( "," IDENTIFIER )* ;
 
 exprStmt -> expression ";" ;
 ifStmt -> "if" "(" expression ")" statement ( "else" statement )? ;
 printStmt -> "print" expression ";" ;
 whileStmt -> "while" "(" expression ")" statement ;
 forStmt -> "for" "(" ( varDecl | exprStmt | ";") expression? ";" expression? ")" statement ;
+jumpStmt -> breakStmt 
+            | continueStmt
+            | returnStmt ;
+
+breakStmt -> "break" ";" ;
+continueStmt -> "continue" ";" ;
+returnStmt -> "return" expression? ";" ;
 
 block -> "{" declaration* "}" ;
 
@@ -49,7 +63,11 @@ errTermNoLeftOperand -> ( "+" factor )* ;
 factor -> unary ( ( "/" | "*" ) unary )* | errFactorNoLeftOperand ;
 errFactorNoLeftOperand -> ( ( "/" | "*" ) unary )* ;
 
-unary -> ( "!" | "-" ) unary | primary ;
+unary -> ( "!" | "-" ) unary | call ;
+
+call -> primary ( "(" arguments? ")" )* ;
+arguments -> assignment ( "," assignment)* ;  // can't use "," operator in args
+
 primary -> NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")"
             | variableExpr ;
 

@@ -21,16 +21,20 @@ public class GenerateAst {
             "Literal : Object value",
             "Logical : Expr left, Token operator, Expr right",
             "Unary: Token operator, Expr right",
+            "Call : Expr callee, Token paren, List<Expr> arguments",
             "Erroneous: ExprErrType error_type",
             "Variable: Token name"
             ));
     defineAst(outputDir, "Stmt", Arrays.asList(
         "Block : List<Stmt> statements",
         "Expression : Expr expression",
+        "Function : Token name, List<Token> params, List<Stmt> body",
         "If : Expr condition, Stmt thenBranch, Stmt elseBranch",
         "Print : Expr expression",
         "Var : Token name, Expr initializer",
-        "While : Expr condition, Stmt body"
+        "While : Expr condition, Stmt body",
+        "For : Expr condition, Stmt body, Expr increment", // increment needs to be run after "continue"
+        "Jump : Token keyword, Expr value"  // value for return stmt
         ));
   }
 
