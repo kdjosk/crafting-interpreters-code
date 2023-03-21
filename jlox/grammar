@@ -68,8 +68,14 @@ unary -> ( "!" | "-" ) unary | call ;
 call -> primary ( "(" arguments? ")" )* ;
 arguments -> assignment ( "," assignment)* ;  // can't use "," operator in args
 
-primary -> NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")"
-            | variableExpr ;
+primary -> NUMBER 
+            | STRING 
+            | "true" 
+            | "false" 
+            | "nil" 
+            | "(" expression ")"
+            | variableExpr 
+            | lambdaExpr ;
 
 variableExpr - > IDENTIFIER
 
