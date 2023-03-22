@@ -23,7 +23,8 @@ public class GenerateAst {
             "Unary: Token operator, Expr right",
             "Call : Expr callee, Token paren, List<Expr> arguments",
             "Erroneous: ExprErrType error_type",
-            "Variable: Token name"
+            "Variable: Token name",
+            "Lambda : List<Token> params, List<Stmt> body"
             ));
     defineAst(outputDir, "Stmt", Arrays.asList(
         "Block : List<Stmt> statements",

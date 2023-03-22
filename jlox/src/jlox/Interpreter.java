@@ -5,7 +5,10 @@ import static jlox.TokenType.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
+import jlox.Expr.Lambda;
 import jlox.Stmt.Function;
 
 class Interpreter implements Expr.Visitor<Object>,
@@ -15,6 +18,7 @@ class Interpreter implements Expr.Visitor<Object>,
   private Environment environment = globals;
   private static boolean brakeSet = false;
   private static boolean continueSet = false;
+  private final Map<Expr, Integer> locals = new HashMap<>();
   
   Interpreter() {
     globals.define("clock", new LoxCallable() {
@@ -92,7 +96,14 @@ class Interpreter implements Expr.Visitor<Object>,
   @Override
   public Object visitAssignExpr(Expr.Assign expr) {
     Object value = evaluate(expr.value);
-    environment.assign(expr.name, value);
+    
+    Integer distance = locals.get(expr);
+    if (distance != null) {
+      environment.assignAt(distance, expr.name, value);
+    } else {
+      globals.assign(expr.name, value);
+    }
+    
     return value;
   }
 
@@ -104,9 +115,14 @@ class Interpreter implements Expr.Visitor<Object>,
   
   @Override
   public Void visitFunctionStmt(Function stmt) {
-    LoxFunction function = new LoxFunction(stmt, environment);
+    LoxFunction function = new LoxFunction(stmt.name.lexeme, stmt.params, stmt.body, environment);
     environment.define(stmt.name.lexeme, function);
     return null;
+  }
+  
+  @Override
+  public Object visitLambdaExpr(Lambda expr) {
+    return new LoxFunction("lambda", expr.params, expr.body, environment);
   }
   
   
@@ -297,7 +313,8 @@ class Interpreter implements Expr.Visitor<Object>,
     
     return function.call(this, arguments);
   }
-
+  
+  
   @Override
   public Object visitUnaryExpr(Expr.Unary expr) {
     Object right = evaluate(expr.right);
@@ -315,7 +332,16 @@ class Interpreter implements Expr.Visitor<Object>,
   
   @Override
   public Object visitVariableExpr(Expr.Variable expr) {
-    return environment.get(expr.name);
+    return lookUpVariable(expr.name, expr);
+  }
+  
+  private Object lookUpVariable(Token name, Expr expr) {
+    Integer distance = locals.get(expr);
+    if (distance != null) {
+      return environment.getAt(distance, name.lexeme);
+    } else {
+      return globals.get(name);
+    }
   }
   
   private void checkNumberOperand(Token operator, Object operand) {
@@ -354,5 +380,9 @@ class Interpreter implements Expr.Visitor<Object>,
   
   private void execute(Stmt stmt) {
     stmt.accept(this);
+  }
+  
+  void resolve(Expr expr, int depth) {
+    locals.put(expr, depth);
   }
 }

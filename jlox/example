@@ -1,26 +1,16 @@
-fun fib(n) {
-  if (n <= 1) return n;
-  return fib(n - 2) + fib(n - 1);
-}
 
-for (var i = 0; i < 20; i = i + 1) {
-  print fib(i);
-}
-
-for (var i = 0; i < 20; i = i + 1) {
-  print i;
-}
-
-fun makeCounter() {
-  var i = 0;
-  fun count() {
-    i = i + 1;
-    print i;
+{
+  var a = "scope";
+  fun showA() {
+    print a;
   }
 
-  return count;
+  showA();
+  a = "block";
+  showA();
 }
 
-var counter = makeCounter();
-counter(); // "1".
-counter(); // "2".
+var a = "outer";
+{
+  var a = a;
+}

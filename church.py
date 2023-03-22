@@ -16,3 +16,9 @@ conditional(true, true_func, false_func)  # Output: True branch
 
 # Call the conditional function with the false Church boolean
 conditional(false, true_func, false_func)  # Output: False branch
+
+
+a = 4
+if true:
+    a = a
+    print(a)

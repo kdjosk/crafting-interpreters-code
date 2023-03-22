@@ -18,7 +18,7 @@ class Parser {
   // program -> (expression | declaration) EOF ;
   Object parseFromInteractive() {
     if (check(VAR, PRINT, LEFT_BRACE)) {
-      Stmt stmt = declaration(false, false);
+      Stmt stmt = declaration();
       if (!isAtEnd()) {
         error(peek(), "Single statement expected in interactive mode");
       }
@@ -46,18 +46,18 @@ class Parser {
   List<Stmt> parseFromFile() {
     List<Stmt> statements = new ArrayList<>();
     while (!isAtEnd()) {
-      statements.add(declaration(false, false));
+      statements.add(declaration());
     }
     return statements;
   }
   
   // declaration -> varDecl | funDecl | statement ;
   // varDecl -> "var" IDENTIFIER ( "=" expression )? ";" ;
-  private Stmt declaration(boolean insideLoop, boolean insideFun) {
+  private Stmt declaration() {
     try {
       if (match(FUN)) return function("function");
       if (match(VAR)) return varDeclaration();
-      return statement(insideLoop, insideFun);
+      return statement();
     } catch (ParseError error) { 
       synchronize();
       return null;
@@ -70,24 +70,15 @@ class Parser {
   private Stmt.Function function(String kind) {
     Token name = consume(IDENTIFIER, "Expected " + kind + " name.");
     consume(LEFT_PAREN, "Expected '(' after " + kind + " name.");
-    List<Token> parameters = new ArrayList<>();
-    if (!check(RIGHT_PAREN)) {
-      do {
-        if (parameters.size() >= 255) {
-          error(peek(), "Can't have more than 255 parameters");
-        }
-        
-        parameters.add(
-            consume(IDENTIFIER, "Expect parameter name."));
-      } while (match(COMMA));
-    }
+    List<Token> parameters = parameters();
     
     consume(RIGHT_PAREN, "Expect ')' after parameters");
     
     consume(LEFT_BRACE, "Expected '{' before " + kind + " body.");
-    List<Stmt> body = block(false, true);
+    List<Stmt> body = block();
     return new Stmt.Function(name,  parameters, body);
   }
+  
   
   private Stmt varDeclaration() {
     Token name = consume(IDENTIFIER, "Expected variable name.");
@@ -111,22 +102,13 @@ class Parser {
   //  breakStmt -> "break" ";" ;
   //  continueStmt -> "continue" ";" ;
   //  block -> "{" declaration* "}" ;
-  private Stmt statement(boolean insideLoop, boolean insideFun) {
-    if (match(IF)) return ifStatement(insideLoop, insideFun);
+  private Stmt statement() {
+    if (match(IF)) return ifStatement();
     if (match(PRINT)) return printStatement();
-    if (match(WHILE)) return whileStatement(insideFun);
-    if (match(FOR)) return forStatement(insideFun);
-    if (match(LEFT_BRACE)) return new Stmt.Block(block(insideLoop, insideFun));
-    
-    if (match(CONTINUE, BREAK)) {
-      if (insideLoop) return jumpStatement();
-      throw error(previous(), "Jump statements are not allowed outside of loop body.");
-    }
-    
-    if (match(RETURN)) {
-      if (insideFun) return jumpStatement();
-      throw error(previous(), "Return statements are not allowed outside of function body.");
-    }
+    if (match(WHILE)) return whileStatement();
+    if (match(FOR)) return forStatement();
+    if (match(LEFT_BRACE)) return new Stmt.Block(block());
+    if (match(CONTINUE, BREAK, RETURN)) return jumpStatement();
     
     return expressionStatement();
   }
@@ -156,7 +138,7 @@ class Parser {
     return new Stmt.Jump(keyword, value);
   }
   
-  private Stmt forStatement(boolean insideFun) {
+  private Stmt forStatement() {
     consume(LEFT_PAREN, "Expected '(' after 'for'.");
     
     Stmt initializer;
@@ -180,7 +162,7 @@ class Parser {
     }
     consume(RIGHT_PAREN, "Expected ')' after increment expression");
     
-    Stmt body = statement(true, insideFun);
+    Stmt body = statement();
     Stmt loop = new Stmt.For(condition, body, increment);
     
     if (initializer != null) {
@@ -191,34 +173,34 @@ class Parser {
     
   }
   
-  private Stmt whileStatement(boolean insideFun) {
+  private Stmt whileStatement() {
     consume(LEFT_PAREN, "Expected '(' after 'while'.");
     Expr condition = expression();
     consume(RIGHT_PAREN, "Expected ')' after condition.");
-    Stmt body = statement(true, insideFun);
+    Stmt body = statement();
     
     return new Stmt.While(condition, body);
   }
   
-  private Stmt ifStatement(boolean insideLoop, boolean insideFun) {
+  private Stmt ifStatement() {
     consume(LEFT_PAREN, "Expected '(' after 'if'.");
     Expr condition = expression();
     consume(RIGHT_PAREN, "Expect ')' after if condition.");
     
-    Stmt thenBranch = statement(insideLoop, insideFun);
+    Stmt thenBranch = statement();
     Stmt elseBranch = null;
     if (match(ELSE)) {
-      elseBranch = statement(insideLoop, insideFun);
+      elseBranch = statement();
     }
     
     return new Stmt.If(condition, thenBranch, elseBranch);
   }
   
-  private List<Stmt> block(boolean insideLoop, boolean insideFun) {
+  private List<Stmt> block() {
     List<Stmt> statements = new ArrayList<>();
     
     while (!check(RIGHT_BRACE) && !isAtEnd()) {
-      statements.add(declaration(insideLoop, insideFun));
+      statements.add(declaration());
     }
     
     consume(RIGHT_BRACE, "Expected '}' after block.");
@@ -465,19 +447,20 @@ class Parser {
     return new Expr.Call(callee, paren, arguments);
   }
   
-  // primary -> NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" | IDENTIFIER;
+  // primary -> NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" | IDENTIFIER | lambdaExpr;
   private Expr primary() {
     if (match(FALSE)) return new Expr.Literal(false);
     if (match(TRUE)) return new Expr.Literal(true);
     if (match(NIL)) return new Expr.Literal(null);
     
-    if (match(NUMBER, STRING)) {
-      return new Expr.Literal(previous().literal);
-    }
+    if (match(NUMBER, STRING)) return new Expr.Literal(previous().literal);
     
-    if (match(IDENTIFIER)) {
-      return new Expr.Variable(previous());
-    }
+    
+    if (match(IDENTIFIER)) return new Expr.Variable(previous());
+    
+    
+    if (match(FUN)) return lambda();
+    
     
     if (match(LEFT_PAREN)) {
       Expr expr = expression();
@@ -486,6 +469,34 @@ class Parser {
     }
     
     throw error(peek(), "Expected expression.");
+  }
+  
+  //  lambdaExpr -> "fun" "(" parameters? ")" block
+  //  parameters -> IDENTIFIER ( "," IDENTIFIER )* ;
+  private Expr.Lambda lambda() {
+    consume(LEFT_PAREN, "Expected '(' after 'fun' in lambda expression.");
+    List<Token> parameters = parameters();
+    
+    consume(RIGHT_PAREN, "Expect ')' after parameters");
+    
+    consume(LEFT_BRACE, "Expected '{' before function body.");
+    List<Stmt> body = block();
+    return new Expr.Lambda(parameters, body);
+  }
+  
+  private List<Token> parameters() {
+    List<Token> parameters = new ArrayList<>();
+    if (!check(RIGHT_PAREN)) {
+      do {
+        if (parameters.size() >= 255) {
+          error(peek(), "Can't have more than 255 parameters");
+        }
+        
+        parameters.add(
+            consume(IDENTIFIER, "Expect parameter name."));
+      } while (match(COMMA));
+    }
+    return parameters;
   }
   
   private boolean match(TokenType... types) {

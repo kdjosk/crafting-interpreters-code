@@ -79,4 +79,7 @@ primary -> NUMBER
 
 variableExpr - > IDENTIFIER
 
+lambdaExpr -> "fun" "(" parameters? ")" block
+parameters -> IDENTIFIER ( "," IDENTIFIER )* ;
+
 ternary -> expression "?" expression ":" expression ;
