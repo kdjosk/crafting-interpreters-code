@@ -10,6 +10,7 @@
   showA();
 }
 
+
 var a = "outer";
 {
   var a = 2;
@@ -24,3 +25,9 @@ fun fact(n) {
 }
 
 print fact(5);
+
+{
+    var a = 5;
+    if (true) a = 4;
+    print b;
+}

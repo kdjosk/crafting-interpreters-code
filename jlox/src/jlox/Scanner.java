@@ -165,6 +165,9 @@ public class Scanner {
             while (!isAtEnd()) {
                 if (peek() == '\n') { 
                     line++;
+                    column = -1;
+                    linesText.add(source.substring(lineStart, current - 1));
+                    lineStart = current;
                 } else if (peek() == '/' && peekNext() == '*') {
                     nest_lvl++;
                     advance(); advance();

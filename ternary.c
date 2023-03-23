@@ -2,9 +2,8 @@
 #include <stdbool.h>
 
 int main(void) {
-    int a = 1;
     {
-        int a = a;
+        if (true) int a = 5;     
         printf("%d\n", a);
     }
     return 0;
