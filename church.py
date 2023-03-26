@@ -18,7 +18,20 @@ conditional(true, true_func, false_func)  # Output: True branch
 conditional(false, true_func, false_func)  # Output: False branch
 
 
-a = 4
-if true:
-    a = a
-    print(a)
+class A:
+    def sayHi(self):
+        print(f"Hi, Im {self.name}")
+
+
+a = A()
+a.name = " Żaneta"
+
+b = A()
+b.name = "Hieronim"
+
+b.sayHi = a.sayHi
+
+del a
+
+b.sayHi()
+

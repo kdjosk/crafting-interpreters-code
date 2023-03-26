@@ -6,6 +6,7 @@ program -> (declaration*) EOF ;
 
 declaration -> varDecl 
               | funDecl 
+              | classDecl
               | statement ;
 
 statement -> exprStmt 
@@ -16,11 +17,15 @@ statement -> exprStmt
             | jumpStmt
             | block ;
             
+            
 varDecl -> "var" IDENTIFIER ( "=" expression )? ";" ;
+
+classDecl -> "class" IDENTIFIER "{" function* "}";
 
 funDecl -> "fun" function ;
 function -> IDENTIFIER "(" parameters? ")" block ; 
 parameters -> IDENTIFIER ( "," IDENTIFIER )* ;
+
 
 exprStmt -> expression ";" ;
 ifStmt -> "if" "(" expression ")" statement ( "else" statement )? ;
@@ -40,7 +45,7 @@ block -> "{" declaration* "}" ;
 expression -> assignment ( "," assignment )* | errExprNoLeftOperand ;
 errExprNoLeftOperand -> ( "," assignment )* ;
 
-assignment -> IDENTIFIER "=" assignment | ternary | errAssignNoLeftOperand ;
+assignment -> ( call "." )? IDENTIFIER "=" assignment | ternary | errAssignNoLeftOperand ;
 errAssignNoLeftOperand -> "=" assignment ;
 
 ternary -> logic_or ( "?" logic_or ":" ternary )? ;
@@ -65,7 +70,7 @@ errFactorNoLeftOperand -> ( ( "/" | "*" ) unary )* ;
 
 unary -> ( "!" | "-" ) unary | call ;
 
-call -> primary ( "(" arguments? ")" )* ;
+call -> primary ( "(" arguments? ")" | "." IDENTIFIER )* ;
 arguments -> assignment ( "," assignment)* ;  // can't use "," operator in args
 
 primary -> NUMBER 
