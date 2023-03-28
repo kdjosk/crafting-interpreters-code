@@ -119,29 +119,81 @@ class Interpreter implements Expr.Visitor<Object>,
   
   @Override
   public Void visitClassStmt(Stmt.Class stmt) {
+    Object superclass = null;
+    if (stmt.superclass != null) {
+      superclass = evaluate(stmt.superclass);
+      if (!(superclass instanceof LoxClass)) {
+        throw new RuntimeError(stmt.superclass.name,
+            "Superclass must be a class");
+      }
+    }
+    
     if (environment != null) {
       environment.define(null);
-      LoxClass klass = createClass(stmt.name.lexeme, stmt.methods);
+      LoxClass klass = createClass(stmt, (LoxClass)superclass);
       environment.updateLatestDefine(klass);
     } else {
       globals.put(stmt.name.lexeme, null);
-      LoxClass klass = createClass(stmt.name.lexeme, stmt.methods);
-      globals.put(stmt.name.lexeme, klass);
+      LoxClass klass = createClass(stmt, (LoxClass)superclass);
+      globals.put(klass.name, klass);
     }
     
     return null;
   }
   
-  private LoxClass createClass(String name, List<Stmt.Function> methods) {
-    Map<String, LoxFunction> loxMethods = new HashMap<>();
-    for (Stmt.Function method : methods) {
-      LoxFunction function = new LoxFunction(
-          method.name.lexeme, method.params, method.body, environment,
-          method.name.lexeme.equals("init"));
-      loxMethods.put(method.name.lexeme, function);
+  @Override
+  public Object visitSuperExpr(Expr.Super expr) {
+    int distance = locals.get(expr);
+    int index = environmentIndexes.get(expr);
+    LoxClass superclass = (LoxClass) environment.getAt(
+        distance, index);
+  
+    // "this" is always one environment closer, at index 0
+    LoxInstance object = (LoxInstance)environment.getAt(
+        distance - 1, 0);
+    
+    LoxFunction method = superclass.findMethod(expr.method.lexeme);
+    
+    if (method == null) {
+      throw new RuntimeError(expr.method,
+          "Undefined method '" + expr.method.lexeme + "'.");
     }
     
-    return new LoxClass(name, loxMethods);
+    return method.bind(object);
+        
+  }
+  
+  private LoxClass createClass(Stmt.Class stmt, LoxClass superclass) {
+    if (stmt.superclass != null) {
+      environment = new Environment(environment);
+      environment.define(superclass);
+    }
+    
+    Map<String, LoxFunction> methods = createLoxFunctions(stmt.methods);
+    Map<String, LoxFunction> staticMethods = createLoxFunctions(stmt.staticMethods);
+    
+    LoxClass metaclass = new LoxClass(
+        stmt.name.lexeme, superclass, staticMethods, null);
+    
+    LoxClass klass = new LoxClass(
+        stmt.name.lexeme, superclass, methods, metaclass);
+    
+    if (stmt.superclass != null) {
+      environment = environment.enclosing;
+    }
+    
+    return klass;
+  }
+  
+  private Map<String, LoxFunction> createLoxFunctions(List<Stmt.Function> functions) {
+    Map<String, LoxFunction> loxFunctions = new HashMap<>();
+    for (Stmt.Function function : functions) {
+      LoxFunction loxFunction = new LoxFunction(
+          function.name.lexeme, function.params, function.body, environment,
+          function.name.lexeme.equals("init"));
+      loxFunctions.put(function.name.lexeme, loxFunction);
+    }
+    return loxFunctions;
   }
   
   @Override

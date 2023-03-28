@@ -1,8 +1,15 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.22)
 
-project(clox LANGUAGES C)
+set(CMAKE_C_STANDARD 11)
+set(CMAKE_C_STANDARD_REQUIRED True)
 
-add_executable(clox main.c)
+project(clox)
 
-install(TARGETS clox
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
+add_executable(${PROJECT_NAME}
+    src/clox.c
+    src/memory.c
+    src/chunk.c
+    src/debug.c
+    src/value.c)
+
+target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wpedantic -Wextra)

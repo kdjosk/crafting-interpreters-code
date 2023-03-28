@@ -20,7 +20,8 @@ statement -> exprStmt
             
 varDecl -> "var" IDENTIFIER ( "=" expression )? ";" ;
 
-classDecl -> "class" IDENTIFIER "{" function* "}";
+classDecl -> "class" IDENTIFIER ( "<" IDENTIFIER )?
+             "{" "class"? function* "}";
 
 funDecl -> "fun" function ;
 function -> IDENTIFIER "(" parameters? ")" block ; 
@@ -79,10 +80,9 @@ primary -> NUMBER
             | "false" 
             | "nil" 
             | "(" expression ")"
-            | variableExpr 
+            | "super" "." IDENTIFIER
+            | IDENTIFIER 
             | lambdaExpr ;
-
-variableExpr - > IDENTIFIER
 
 lambdaExpr -> "fun" "(" parameters? ")" block
 parameters -> IDENTIFIER ( "," IDENTIFIER )* ;
