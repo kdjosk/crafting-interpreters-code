@@ -12,7 +12,7 @@
 
 # =============================================================================
 # Project: clox
-# Configurations: 
+# Configurations: Debug
 # =============================================================================
 
 #############################################
@@ -20,6 +20,11 @@
 
 ninja_required_version = 1.5
 
+
+#############################################
+# Set configuration variable for custom commands.
+
+CONFIGURATION = Debug
 # =============================================================================
 # Include auxiliary files.
 
@@ -44,33 +49,33 @@ cmake_ninja_workdir = /home/krzysztof/code/crafting-interpreters/clox/build/
 
 build cmake_object_order_depends_target_clox: phony || CMakeFiles/clox.dir
 
-build CMakeFiles/clox.dir/src/clox.c.o: C_COMPILER__clox_ /home/krzysztof/code/crafting-interpreters/clox/src/clox.c || cmake_object_order_depends_target_clox
+build CMakeFiles/clox.dir/src/clox.c.o: C_COMPILER__clox_Debug /home/krzysztof/code/crafting-interpreters/clox/src/clox.c || cmake_object_order_depends_target_clox
   DEP_FILE = CMakeFiles/clox.dir/src/clox.c.o.d
-  FLAGS = -Wall -Wpedantic -Wextra -std=gnu11
+  FLAGS = -g -Wall -Wpedantic -Wextra -std=gnu11
   OBJECT_DIR = CMakeFiles/clox.dir
   OBJECT_FILE_DIR = CMakeFiles/clox.dir/src
 
-build CMakeFiles/clox.dir/src/memory.c.o: C_COMPILER__clox_ /home/krzysztof/code/crafting-interpreters/clox/src/memory.c || cmake_object_order_depends_target_clox
+build CMakeFiles/clox.dir/src/memory.c.o: C_COMPILER__clox_Debug /home/krzysztof/code/crafting-interpreters/clox/src/memory.c || cmake_object_order_depends_target_clox
   DEP_FILE = CMakeFiles/clox.dir/src/memory.c.o.d
-  FLAGS = -Wall -Wpedantic -Wextra -std=gnu11
+  FLAGS = -g -Wall -Wpedantic -Wextra -std=gnu11
   OBJECT_DIR = CMakeFiles/clox.dir
   OBJECT_FILE_DIR = CMakeFiles/clox.dir/src
 
-build CMakeFiles/clox.dir/src/chunk.c.o: C_COMPILER__clox_ /home/krzysztof/code/crafting-interpreters/clox/src/chunk.c || cmake_object_order_depends_target_clox
+build CMakeFiles/clox.dir/src/chunk.c.o: C_COMPILER__clox_Debug /home/krzysztof/code/crafting-interpreters/clox/src/chunk.c || cmake_object_order_depends_target_clox
   DEP_FILE = CMakeFiles/clox.dir/src/chunk.c.o.d
-  FLAGS = -Wall -Wpedantic -Wextra -std=gnu11
+  FLAGS = -g -Wall -Wpedantic -Wextra -std=gnu11
   OBJECT_DIR = CMakeFiles/clox.dir
   OBJECT_FILE_DIR = CMakeFiles/clox.dir/src
 
-build CMakeFiles/clox.dir/src/debug.c.o: C_COMPILER__clox_ /home/krzysztof/code/crafting-interpreters/clox/src/debug.c || cmake_object_order_depends_target_clox
+build CMakeFiles/clox.dir/src/debug.c.o: C_COMPILER__clox_Debug /home/krzysztof/code/crafting-interpreters/clox/src/debug.c || cmake_object_order_depends_target_clox
   DEP_FILE = CMakeFiles/clox.dir/src/debug.c.o.d
-  FLAGS = -Wall -Wpedantic -Wextra -std=gnu11
+  FLAGS = -g -Wall -Wpedantic -Wextra -std=gnu11
   OBJECT_DIR = CMakeFiles/clox.dir
   OBJECT_FILE_DIR = CMakeFiles/clox.dir/src
 
-build CMakeFiles/clox.dir/src/value.c.o: C_COMPILER__clox_ /home/krzysztof/code/crafting-interpreters/clox/src/value.c || cmake_object_order_depends_target_clox
+build CMakeFiles/clox.dir/src/value.c.o: C_COMPILER__clox_Debug /home/krzysztof/code/crafting-interpreters/clox/src/value.c || cmake_object_order_depends_target_clox
   DEP_FILE = CMakeFiles/clox.dir/src/value.c.o.d
-  FLAGS = -Wall -Wpedantic -Wextra -std=gnu11
+  FLAGS = -g -Wall -Wpedantic -Wextra -std=gnu11
   OBJECT_DIR = CMakeFiles/clox.dir
   OBJECT_FILE_DIR = CMakeFiles/clox.dir/src
 
@@ -82,7 +87,8 @@ build CMakeFiles/clox.dir/src/value.c.o: C_COMPILER__clox_ /home/krzysztof/code/
 #############################################
 # Link the executable clox
 
-build clox: C_EXECUTABLE_LINKER__clox_ CMakeFiles/clox.dir/src/clox.c.o CMakeFiles/clox.dir/src/memory.c.o CMakeFiles/clox.dir/src/chunk.c.o CMakeFiles/clox.dir/src/debug.c.o CMakeFiles/clox.dir/src/value.c.o
+build clox: C_EXECUTABLE_LINKER__clox_Debug CMakeFiles/clox.dir/src/clox.c.o CMakeFiles/clox.dir/src/memory.c.o CMakeFiles/clox.dir/src/chunk.c.o CMakeFiles/clox.dir/src/debug.c.o CMakeFiles/clox.dir/src/value.c.o
+  FLAGS = -g
   OBJECT_DIR = CMakeFiles/clox.dir
   POST_BUILD = :
   PRE_LINK = :

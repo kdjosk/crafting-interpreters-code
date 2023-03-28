@@ -1,10 +1,13 @@
 # ninja log v5
-0	16	1680039744039189011	CMakeFiles/clox.dir/src/clox.c.o	9b179cdf20c2e6df
+0	15	1680042148755714783	CMakeFiles/clox.dir/src/clox.c.o	9b179cdf20c2e6df
 0	19	1680036529780067056	CMakeFiles/clox.dir/src/memory.c.o	38300f80ecb514fb
-0	21	1680039744043189006	CMakeFiles/clox.dir/src/chunk.c.o	d1b46d771c11985a
-1	19	1680039744043189006	CMakeFiles/clox.dir/src/value.c.o	a9cf8c4cbeb849f8
-21	38	1680039800583124354	clox	f25da5b3cd2d7800
-0	21	1680039800567124373	CMakeFiles/clox.dir/src/debug.c.o	7aba1c0735236b77
-1	16	1680039862935054838	CMakeFiles/clox.dir/src/clox.c.o	9b179cdf20c2e6df
+0	26	1680042431799704974	CMakeFiles/clox.dir/src/chunk.c.o	d1b46d771c11985a
 1	19	1680039862939054834	CMakeFiles/clox.dir/src/value.c.o	a9cf8c4cbeb849f8
-19	37	1680039862959054812	clox	f25da5b3cd2d7800
+26	43	1680042431815704971	clox	f25da5b3cd2d7800
+0	20	1680042148759714783	CMakeFiles/clox.dir/src/debug.c.o	7aba1c0735236b77
+0	18	1680042690079664669	CMakeFiles/clox.dir/src/clox.c.o	ef2ebfe6f2202058
+1	20	1680042690083664668	CMakeFiles/clox.dir/src/value.c.o	ea3bfe807fca30e2
+0	20	1680042690083664668	CMakeFiles/clox.dir/src/memory.c.o	9f6fc65c867d4c4
+0	24	1680042690087664667	CMakeFiles/clox.dir/src/debug.c.o	1cbb220cbddc316a
+0	25	1680042690087664667	CMakeFiles/clox.dir/src/chunk.c.o	c042000ea75ea95a
+25	49	1680042690111664663	clox	672f5d4155d7930d
