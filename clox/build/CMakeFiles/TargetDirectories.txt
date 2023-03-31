@@ -1,3 +1,0 @@
-/home/krzysztof/code/crafting-interpreters/clox/build/CMakeFiles/clox.dir
-/home/krzysztof/code/crafting-interpreters/clox/build/CMakeFiles/edit_cache.dir
-/home/krzysztof/code/crafting-interpreters/clox/build/CMakeFiles/rebuild_cache.dir
