@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "chunk.h"
 #include "memory.h"
@@ -95,6 +96,7 @@ int getLine(Chunk *chunk, int offset) {
     }
 
     // this should never happen, but if it does it means there's a bug
+    fprintf(stderr, "Failed to get line number\n");
     exit(1);
 }
 
