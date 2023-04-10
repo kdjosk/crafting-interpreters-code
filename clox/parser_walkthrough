@@ -1,0 +1,33 @@
+(-1 + 2) * 3 - -4
+
+advance() c = (, p = ?
+expression()
+    parsePrecedence(PREC_ASSIGNMENT)
+        advance() c = -, p = (
+        grouping()
+            expression()
+                parsePrecedence(PREC_ASSIGNMENT)
+                    advance() c = 1, p = -
+                    unary()
+                        parsePrecedence(PREC_UNARY)
+                            advance() c = +, p = 1
+                            number()
+                    advance() c = 2, p = +
+                    binary()
+                        parsePrecedence(PREC_TERM + 1)
+                            advance() c = ), p = 2
+                            number()
+            consume(')') c = *, p = )   
+        advance() c = 3, p = *
+        binary()
+            parsePrecedence(PREC_FACTOR + 1)
+                advance() c = -, p = 3
+                number()
+        advance() c = - p = -
+        binary()
+            parsePrecedence(PREC_TERM + 1)
+                advance() c = 4, p = -
+                unary()
+                    parsePrecedence(PREC_UNARY)
+                        advance() c = eof, p = 4
+                        number()

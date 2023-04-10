@@ -13,7 +13,9 @@ add_executable(${PROJECT_NAME}
     src/chunk.c
     src/debug.c
     src/value.c
-    src/vm.c)
+    src/vm.c
+    src/scanner.c
+    src/compiler.c)
 
 target_compile_options(${PROJECT_NAME} PRIVATE 
     -Wall -Wpedantic -Wextra -Wswitch-enum -fdiagnostics-color=always)

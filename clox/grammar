@@ -1,0 +1,159 @@
+// REPL start rule
+program:
+    (expression | declaration) EOF 
+    ;
+
+// File start rule 
+program:
+    (declaration*) EOF 
+    ;
+
+declaration:
+    varDecl 
+    | funDecl 
+    | classDecl
+    | statement 
+    ;
+
+statement:
+    exprStmt 
+    | ifStmt 
+    | printStmt
+    | whileStmt
+    | forStmt
+    | jumpStmt
+    | block 
+    ;
+    
+            
+varDecl:
+    "var" IDENTIFIER ( "=" expression )? ";" 
+    ;
+
+classDecl: 
+    "class" IDENTIFIER ( "<" IDENTIFIER )? 
+    "{" "class"? function* "}"
+    ;
+
+funDecl:
+    "fun" function 
+    ;
+
+function:
+    IDENTIFIER "(" parameters? ")" block 
+    ; 
+
+parameters:
+    IDENTIFIER ( "," IDENTIFIER )*
+    ;
+
+exprStmt:
+    expression ";"
+    ;
+
+ifStmt:
+    "if" "(" expression ")" statement ( "else" statement )? 
+    ;
+
+printStmt:
+    "print" expression ";" 
+    ;
+
+whileStmt:
+    "while" "(" expression ")" statement 
+    ;
+
+forStmt:
+    "for" "(" ( varDecl | exprStmt | ";") 
+    expression? ";" expression? ")" statement 
+    ;
+
+jumpStmt:
+    breakStmt 
+    | continueStmt
+    | returnStmt 
+    ;
+
+breakStmt:
+    "break" ";" 
+    ;
+
+continueStmt:
+    "continue" ";"
+    ;
+
+returnStmt:
+    "return" expression? ";" 
+    ;
+
+block:
+    "{" declaration* "}" 
+    ;
+
+expression:
+    assignment ( "," assignment )* 
+    ;
+
+assignment:
+    ( call "." )? IDENTIFIER "=" assignment | ternary 
+    ;
+
+ternary:
+    logic_or ( "?" logic_or ":" ternary )? 
+    ;
+
+logic_or:
+    logic_and ( "or" logic_and )*
+    ;
+
+logic_and:
+    equality ( "and" equality )*
+    ;
+
+equality:
+    comparison ( ( "!=" | "==" ) comparison )*
+    ;
+
+comparison:
+    term ( ( ">" | ">=" | "<" | "<=") term )*
+    ; 
+
+term:
+    factor ( ( "-" | "+" ) factor )*
+    ;
+
+factor:
+    unary ( ( "/" | "*" ) unary )*
+    ;
+
+unary:
+    ( "!" | "-" ) unary | call
+    ;
+
+call:
+    primary ( "(" arguments? ")" | "." IDENTIFIER )*
+    ;
+
+arguments:
+    assignment ( "," assignment)* 
+    ;  // can't use "," operator in args
+
+primary:
+    NUMBER 
+    | STRING 
+    | "true" 
+    | "false" 
+    | "nil" 
+    | "(" expression ")"
+    | "super" "." IDENTIFIER
+    | IDENTIFIER 
+    | lambdaExpr 
+    ;
+
+lambdaExpr:
+    "fun" "(" parameters? ")" block
+    ;
+
+parameters:
+    IDENTIFIER ( "," IDENTIFIER )* 
+    ;
